@@ -14,12 +14,6 @@ using std::cout;
 using std::endl;
 using std::cerr;
 
-char response_[] = "HTTP/1.1 200 OK\r\n"
-		"Content-Type: text/html; charset=UTF-8\r\n\r\n"
-		"<!DOCTYPE html><html><head><title>Simple page</title></head>"
-		"<body><h1>Simple WEB server, it's not apache2.</h1>"
-		"</body></html>\r\n";
-
 Server::Server() {
 	cout << "Server()" << endl;
 	_socket = 0;
@@ -63,10 +57,30 @@ void Server::run() {
 	cout << "run()" << endl;
 	listen(_socket, 1);
 	while (true) {
-		_parser.set(recv_s());
-		whatToDo();
-		close_s();
+		if (isConnected()) {
+			switch (fork()) {
+			case 0: // child
+				_parser.set(recv_s());
+				whatToDo();
+				close_s();
+				break;
+			case -1: // error
+				cerr << "recv_s(): " << strerror(errno);
+				break;
+			default: //parent
+				close_s();
+			}
+		}
 	}
+}
+
+bool Server::isConnected() {
+	_client_fd = accept(_socket, (struct sockaddr *) &_cli_addr, &_sin_len);
+	if (_client_fd == -1) {
+		cerr << "recv_s(): " << strerror(errno);
+		return false;
+	}
+	return true;
 }
 
 void Server::whatToDo() {
@@ -85,7 +99,7 @@ void Server::whatToDo() {
 	}
 }
 
-const std::string Server::genHeader(uint16_t code, const std::string& msg){
+const std::string Server::genHeader(uint16_t code, const std::string& msg) {
 	std::stringstream stream;
 	stream << "HTTP/1.1" << code << msg << endl;
 	stream << "Content-Type: text/html; charset=UTF-8" << endl << endl;
@@ -103,18 +117,11 @@ void Server::send(const std::string &path) {
 		stream << dataFromFile(PAGE_404);
 	}
 
-
 	write(_client_fd, stream.str().c_str(), stream.str().size());
 }
 
 const std::string Server::recv_s() {
-	_client_fd = accept(_socket, (struct sockaddr *) &_cli_addr, &_sin_len);
-	if (_client_fd == -1) {
-		cerr << "recv_s(): " << strerror(errno);
-		return NULL;
-	}
 	cout << "connected..." << endl;
-
 	int bytes_read = recv(_client_fd, &*buf, BUF_SIZE, 0);
 	if (bytes_read == -1) {
 		cerr << "recv_s(): " << strerror(errno);

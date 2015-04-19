@@ -42,6 +42,7 @@ private:
 	void whatToDo();
 	void close_s() { close(_client_fd); }
 	const std::string genHeader(uint16_t code, const std::string& msg);
+	bool isConnected();
 
 public:
 	Server();
