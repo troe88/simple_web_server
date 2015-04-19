@@ -74,7 +74,8 @@ void Server::run() {
 				close_s();
 				break;
 			case -1: // error
-				srv_print(MakeString() << "recv_s(): " << strerror(errno), LOG_ERR);
+				srv_print(MakeString() << "recv_s(): " << strerror(errno),
+						LOG_ERR);
 				break;
 			default: //parent
 				close_s();
@@ -86,7 +87,8 @@ void Server::run() {
 bool Server::isConnected() {
 	_client_fd = accept(_socket, (struct sockaddr *) &_cli_addr, &_sin_len);
 	if (_client_fd == -1) {
-		srv_print(MakeString() << "isConnected(): " << strerror(errno), LOG_ERR);
+		srv_print(MakeString() << "isConnected(): " << strerror(errno),
+				LOG_ERR);
 		return false;
 	}
 	return true;
@@ -118,12 +120,19 @@ const std::string Server::genHeader(uint16_t code, const std::string& msg) {
 void Server::send(const std::string &path) {
 	std::stringstream stream;
 	std::string abs_path = SERVER_FOLDER + path;
-	if (access(abs_path.c_str(), F_OK) != -1) {
-		stream << genHeader(200, "OK");
-		stream << dataFromFile(abs_path);
+
+	if (access(SERVER_FOLDER, F_OK) != -1) {
+		if (access(abs_path.c_str(), F_OK) != -1) {
+			stream << genHeader(200, "OK");
+			stream << dataFromFile(abs_path);
+		} else {
+			stream << genHeader(404, "Page not found");
+			stream << dataFromFile(PAGE_404);
+		}
 	} else {
-		stream << genHeader(404, "Page not found");
-		stream << dataFromFile(PAGE_404);
+		stream << genHeader(404, "Server directory not found");
+		stream << "<!DOCTYPE html><html><body><h1>server folder not found</h1></body></html>";
+		srv_print(MakeString() << "server_folder not found", LOG_ERR);
 	}
 
 	write(_client_fd, stream.str().c_str(), stream.str().size());
