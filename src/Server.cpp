@@ -100,9 +100,7 @@ void Server::whatToDo() {
 		send(_parser.getPage());
 		break;
 	case POST:
-		break;
 	case HEAD:
-		break;
 	case EMPTY:
 	default:
 		srv_print(MakeString() << "This method does not supported\n", LOG_ERR);
