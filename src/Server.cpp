@@ -15,7 +15,9 @@ using std::endl;
 using std::cerr;
 
 Server::Server() {
+#ifndef DAEMON_MODE
 	cout << "Server()" << endl;
+#endif
 	_socket = 0;
 	_sin_len = sizeof(_cli_addr);
 	buf = new char[BUF_SIZE];
@@ -24,24 +26,28 @@ Server::Server() {
 }
 
 void Server::init() {
+#ifndef DAEMON_MODE
 	cout << "init()" << endl;
+#endif
 	_socket = socket(AF_INET, SOCK_STREAM, 0);
 	if (_socket == -1) {
-		cerr << "init(): " << strerror(errno);
+		srv_print(MakeString() << "init(): " << strerror(errno), LOG_ERR);
 		exit(-1);
 	}
 
 	int optval = 1;
 	if (setsockopt(_socket, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(int))
 			== -1) {
-		cerr << "init(): " << strerror(errno);
+		srv_print(MakeString() << "init(): " << strerror(errno), LOG_ERR);
 		exit(-1);
 	}
 
 }
 
 void Server::bind_s(const int port) {
+#ifndef DAEMON_MODE
 	cout << "bind()" << endl;
+#endif
 	struct sockaddr_in svr_addr;
 	svr_addr.sin_family = AF_INET;
 	svr_addr.sin_addr.s_addr = INADDR_ANY;
@@ -49,12 +55,15 @@ void Server::bind_s(const int port) {
 
 	if (bind(_socket, (struct sockaddr *) &svr_addr, sizeof(svr_addr)) == -1) {
 		close(_socket);
-		cerr << "bind(): " << strerror(errno);
+		srv_print(MakeString() << "bind(): " << strerror(errno), LOG_ERR);
 	}
 }
 
 void Server::run() {
+//	cout << "run()" << endl;
+#ifndef DAEMON_MODE
 	cout << "run()" << endl;
+#endif
 	listen(_socket, 1);
 	while (true) {
 		if (isConnected()) {
@@ -65,7 +74,7 @@ void Server::run() {
 				close_s();
 				break;
 			case -1: // error
-				cerr << "recv_s(): " << strerror(errno);
+				srv_print(MakeString() << "recv_s(): " << strerror(errno), LOG_ERR);
 				break;
 			default: //parent
 				close_s();
@@ -77,7 +86,7 @@ void Server::run() {
 bool Server::isConnected() {
 	_client_fd = accept(_socket, (struct sockaddr *) &_cli_addr, &_sin_len);
 	if (_client_fd == -1) {
-		cerr << "recv_s(): " << strerror(errno);
+		srv_print(MakeString() << "isConnected(): " << strerror(errno), LOG_ERR);
 		return false;
 	}
 	return true;
@@ -94,7 +103,7 @@ void Server::whatToDo() {
 		break;
 	case EMPTY:
 	default:
-		std::cout << "This method does not supported" << std::endl;
+		srv_print(MakeString() << "This method does not supported\n", LOG_ERR);
 		break;
 	}
 }
@@ -121,10 +130,12 @@ void Server::send(const std::string &path) {
 }
 
 const std::string Server::recv_s() {
+#ifndef DAEMON_MODE
 	cout << "connected..." << endl;
+#endif
 	int bytes_read = recv(_client_fd, &*buf, BUF_SIZE, 0);
 	if (bytes_read == -1) {
-		cerr << "recv_s(): " << strerror(errno);
+		srv_print(MakeString() << "recv_s(): " << strerror(errno), LOG_ERR);
 		return NULL;
 	}
 

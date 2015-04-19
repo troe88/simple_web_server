@@ -24,8 +24,8 @@
 #include <unistd.h>
 
 #define BUF_SIZE 1024
-#define SERVER_FOLDER "/home/dmitry/Documents/c_plusplus_Worspace/EclipseProject/web_server/server_folder"
-#define PAGE_404 "/home/dmitry/Documents/c_plusplus_Worspace/EclipseProject/web_server/server_folder/errors/404.html"
+#define SERVER_FOLDER "server_folder"
+#define PAGE_404 "server_folder/errors/404.html"
 
 class Server {
 private:
